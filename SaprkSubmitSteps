@@ -45,6 +45,7 @@ $ VI src/main/scala/Main.scala
 // How I wrote this program is as shown below. This program count the number of time a word appeared in specified file.
 // Here, in my case, the file name is "LICENSE" which is stored on AWS S3 bucket "aws-emr-resources-229945043901-us-west-2".
 // Also, please note that my program stil needs further tuning / rewritting for refined results of word count. 
+// And AWS S3 keys are not specified due to security reasons  
 
 
 import org.apache.spark.SparkConf
@@ -60,8 +61,8 @@ object Main extends App {
 	val sc = new SparkContext(conf)
 	
 
-	val publickey = "AKIAIZK4WMWRIYTUU7EQ"
-	val privatekey = "iTg2GqIzf8lZQ7Kwae0TiljZXcCUxrj1JFjcxePr"
+	val publickey = "XXXXXXX"
+	val privatekey = "XxXxXxXxXxXxXxXxXxXx"
 	sc.hadoopConfiguration.set("fs.s3n.awsAccessKeyId", publickey)
 	sc.hadoopConfiguration.set("fs.s3n.awsSecretAccessKey", privatekey)
 	

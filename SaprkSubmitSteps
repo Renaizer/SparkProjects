@@ -6,8 +6,7 @@
 
 
 /*
-STEP 1: writing my spark programm
-Actions : I use scala. I have to setup my Scala project as per standard directory structure for future use. for this purpose 
+I use scala. I have to setup my Scala project as per standard directory structure for future use. for this purpose 
 I had used Simple Built Tool SBT. To install this sbt tool on Amazon linux AMI I uses below command.
 
 $ curl https://bintray.com/sbt/rpm/rpm | sudo tee /etc/yum.repos.d/bintray-sbt-rpm.repo

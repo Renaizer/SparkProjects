@@ -1,0 +1,128 @@
+//This file covers the steps I have take to 
+//1. write a spark program on Apache EMR cluster
+//2. then assembling these files into one sigle fat jar
+//3. then loading the file data file on amazon s3
+//4. and last hwo I used spark submit to run my application
+
+
+/*
+STEP 1: writing my spark programm
+Actions : I use scala. I have to setup my Scala project as per standard directory structure for future use. for this purpose 
+I had used Simple Built Tool SBT. To install this sbt tool on Amazon linux AMI I uses below command.
+
+$ curl https://bintray.com/sbt/rpm/rpm | sudo tee /etc/yum.repos.d/bintray-sbt-rpm.repo
+$ sudo yum install sbt
+
+Also, on internet I get to know that SBT do not create a directory structure automatically 
+as what maven does, but SBT has to take create such directory structure using a template project on their central repository
+Following the command I used to create new project on SBT
+*/
+
+$ mkdir sbt_project
+$ cd sbt_project
+$ sbt new scala/hello-world.g8
+
+//This command prompts for name of the project to be given your project. I choosed/typed "sparkproject".
+//This created a directory structue in sbt_project as below
+
+$ cd sparkproject
+
+//sparkproject
+//  | -project
+//  | -build.sbt
+//  | -src
+//    |
+//    | -main
+//      |
+//      | -scala
+//        |
+//        | -Main.scala
+        
+// I modified Main.scala with VI editor using below command
+
+$ VI src/main/scala/Main.scala
+
+// As I am beginner to VI editor I created this small spark programm on my gedit first and then pasted my code in VI.
+// How I wrote this program is as shown below. This program count the number of time a word appeared in specified file.
+// Here, in my case, the file name is "LICENSE" which is stored on AWS S3 bucket "aws-emr-resources-229945043901-us-west-2".
+// Also, please note that my program stil needs further tuning / rewritting for refined results of word count. 
+
+
+import org.apache.spark.SparkConf
+import org.apache.spark.SparkContext
+import org.apache.spark.SparkContext._
+
+
+
+object Main extends App {
+  //println("Hello, World! writing first spark program")
+	
+	val conf = new SparkConf().setMaster("local").setAppName("firstprogramm")
+	val sc = new SparkContext(conf)
+	
+
+	val publickey = "AKIAIZK4WMWRIYTUU7EQ"
+	val privatekey = "iTg2GqIzf8lZQ7Kwae0TiljZXcCUxrj1JFjcxePr"
+	sc.hadoopConfiguration.set("fs.s3n.awsAccessKeyId", publickey)
+	sc.hadoopConfiguration.set("fs.s3n.awsSecretAccessKey", privatekey)
+	
+	val inputfile = sc.textFile("s3://aws-emr-resources-229945043901-us-west-2/LICENSE")
+	val words = inputfile.flatMap( line => line.split(" "))
+	val keyvaluewords = words.map(word => (word, 1))
+		
+	val countoftheword = keyvaluewords.reduceByKey( _ + _ )
+	val sortedCountofthewords = countoftheword.sortBy( _._2, false)  
+	//println("all distict words are : "+countoftheword.count)
+	sortedCountofthewords.top(50).foreach(println)
+}
+
+
+// after saving the file, now it time to compile it using sbt. sbt uses "build.sbt" for it execution tracks. 
+// here I have to define dependencies in it for spark-core. I choosed dependencies such that it matches 
+// my spark version and scala version on it. Also, I wrote this sbt file to include sbt assembly pluging so that my 
+// application will be packaged in one small fat jar file. my build.sbt file looks exactly like below.
+
+
+name := "Simple Project"
+organization := "com.renaiz"
+version := "1.0"
+scalaVersion := "2.12.8"
+
+libraryDependencies += "org.apache.spark" %% "spark-core" % "2.4.4" % "provided"
+
+jarName in assembly := "sparkproject-assembly.jar"
+assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
+
+
+// Also, sbt assembly plugins are written in sub-folder of sparkproject directory. Conventionally this file is named
+// as assembly.sbt 
+// Now, write the below code in it and save it
+
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.6")
+
+// After saving file I compiled application as 
+
+$ sbt compile
+
+// When no errors and warnings found in codes, I assembled this project in single fat jar file as 
+
+$ sbt assembly
+
+// This created a JAR file under newly created folder name "target" -> "scala-2.11" -> "sparkproject.jar"
+
+// Now, I used spark-submit to run my application using this JAR file.
+
+spark-submit target/scala-2.11/sparkproject.jar
+
+// I have checked the results on console. This is giving me output as I wanted. 
+//   ;) :) :0
+
+// TARGET 1 : I am goiunf to write another programm that will save its results on AWS S3 so that I will simple check 
+// output of my application any time I want
+
+// TARGET 2 : learn to use EMR to add steps into it. I just read that EMR provides way to add spark application fat jar.
+// They refer it as steps. Hence Learn how to use steps in AWS EMR cluster.
+
+
+
+
